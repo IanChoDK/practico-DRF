@@ -1,9 +1,12 @@
-from rest_framework import generics
+from rest_framework.decorators import action
+from rest_framework import viewsets
+from rest_framework.response import Response
 
-from .models import Ropa, Categoria, Proveedor
-from .serializers import RopaSerializer, RopaPublicSerializer, CategoriaSerializer,ProveedorSerializer
+from .models import Ropa, Categoria, Proveedor, Color, Talle
+from .serializers import RopaSerializer, RopaPublicSerializer, CategoriaSerializer,ProveedorSerializer, ColorSerializer, TalleSerializer
+from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnly
 
-# List -> Get all
+# List -> Get all  
 # Create -> Post
 # Retrieve -> Get by id/pk
 # Update -> Put
@@ -11,35 +14,42 @@ from .serializers import RopaSerializer, RopaPublicSerializer, CategoriaSerializ
 
 # Create your views here.
 
-class CategoriaListCreateAPIView(generics.ListCreateAPIView):
+class ColorViewSet(viewsets.ModelViewSet):
+    queryset = Color.objects.all()
+    permission_classes = [IsAuthenticatedOrReadOnly]
+    serializer_class = ColorSerializer
+
+class TalleViewSet(viewsets.ModelViewSet):
+    queryset = Talle.objects.all()
+    permission_classes = [IsAuthenticatedOrReadOnly]
+    serializer_class = TalleSerializer
+
+class CategoriaViewSet(viewsets.ModelViewSet):
     queryset = Categoria.objects.all()
+    permission_classes = [IsAuthenticatedOrReadOnly]
     serializer_class = CategoriaSerializer
 
-class CategoriaDetailAPIView(generics.RetrieveUpdateDestroyAPIView):
-    queryset = Categoria.objects.all()
-    serializer_class = CategoriaSerializer
 
-
-    
-class RopaListCreateAPIView(generics.ListCreateAPIView):
+class RopaViewSet(viewsets.ModelViewSet):
     queryset = Ropa.objects.all()
+    permission_clases = [IsAuthenticatedOrReadOnly]
 
     def get_serializer_class(self):
         if self.request.method == "GET":
             return RopaPublicSerializer
         else:
             return RopaSerializer
+    
 
-class RopaDetailAPIView(generics.RetrieveUpdateDestroyAPIView):
-    queryset = Ropa.objects.all()
-    serializer_class = RopaSerializer
-
-
-
-class ProveedorListCreateAPIView(generics.ListCreateAPIView):
+class ProveedorViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Proveedor.objects.all()
     serializer_class = ProveedorSerializer
+    permission_clases = [IsAuthenticated]
 
-class ProveedorDetailAPIView(generics.RetrieveUpdateDestroyAPIView):
-    queryset = Proveedor.objects.all()
-    serializer_class = ProveedorSerializer
+    @action(detail=True, methods=["delete"])
+    def logico(self, request, pk=None):
+        proveedor = self.get_object()
+        proveedor.activo = False
+        proveedor.save()
+        return Response({"status":"El proveedor esta inactivo."})
+
